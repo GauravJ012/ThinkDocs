@@ -2,11 +2,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_db, disconnect_db
+from app.repositories.document_repository import create_tables
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_db()
+    await create_tables()
     yield
     await disconnect_db()
 
