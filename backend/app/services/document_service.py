@@ -1,10 +1,15 @@
 from fastapi import UploadFile, HTTPException
-from app.services.pdf_service import save_uploaded_file, delete_file_from_disk
-from app.repositories import document_repository
+from app.services.pdf_service import (
+    save_uploaded_file,
+    delete_file_from_disk,
+    extract_text_from_pdf,
+    chunk_text,
+)
+from app.repositories import document_repository, chunk_repository
 
 
 async def upload_document(file: UploadFile):
-    """Handle PDF upload: validate, save to disk, store metadata in DB."""
+    """Handle PDF upload: validate, save, extract text, chunk, and store."""
 
     # Validate file type
     if not file.filename.lower().endswith(".pdf"):
@@ -23,6 +28,40 @@ async def upload_document(file: UploadFile):
         file_size=file_info["file_size"],
     )
 
+    # Extract text from PDF
+    pages = extract_text_from_pdf(file_info["filename"])
+
+    if not pages:
+        await document_repository.update_document_status(
+            document["id"], status="empty", page_count=0, chunk_count=0
+        )
+        return document
+
+    # Chunk the extracted text
+    chunks = chunk_text(pages)
+
+    # Store chunks in database
+    chunk_records = [
+        {
+            "document_id": document["id"],
+            "content": chunk["content"],
+            "chunk_index": chunk["chunk_index"],
+            "page_number": chunk["page_number"],
+        }
+        for chunk in chunks
+    ]
+    await chunk_repository.insert_chunks_batch(chunk_records)
+
+    # Update document with processing results
+    await document_repository.update_document_status(
+        document["id"],
+        status="chunked",
+        page_count=len(pages),
+        chunk_count=len(chunks),
+    )
+
+    # Return updated document
+    document = await document_repository.find_document_by_id(document["id"])
     return document
 
 
@@ -45,8 +84,5 @@ async def remove_document(doc_id: int):
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    # Delete from database (chunks cascade-deleted automatically)
     await document_repository.delete_document(doc_id)
-
-    # Delete file from disk
     delete_file_from_disk(document["filename"])
