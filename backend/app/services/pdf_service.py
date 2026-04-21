@@ -45,9 +45,9 @@ def extract_text_from_pdf(filename: str) -> list[dict]:
     for page_num in range(len(doc)):
         page = doc[page_num]
         text = page.get_text().strip()
-        if text:  # skip empty pages
+        if text:
             pages.append({
-                "page_number": page_num + 1,  # 1-indexed for users
+                "page_number": page_num + 1,
                 "text": text,
             })
 
@@ -56,12 +56,19 @@ def extract_text_from_pdf(filename: str) -> list[dict]:
 
 
 def chunk_text(pages: list[dict], chunk_size: int = 500, overlap: int = 100) -> list[dict]:
-    """Split extracted pages into overlapping text chunks.
+    """Split extracted pages into overlapping text chunks using sentence-aware grouping.
+
+    Instead of cutting at raw character positions, this function:
+    1. Splits text into sentences first
+    2. Groups sentences until they approach the target chunk_size
+    3. Builds overlap by carrying forward trailing sentences from the previous chunk
+
+    This guarantees no chunk ever starts or ends mid-sentence.
 
     Args:
         pages: list of {"page_number": int, "text": str}
         chunk_size: target size of each chunk in characters
-        overlap: number of overlapping characters between chunks
+        overlap: approximate overlap between consecutive chunks in characters
 
     Returns:
         list of {"content": str, "chunk_index": int, "page_number": int}
@@ -72,32 +79,71 @@ def chunk_text(pages: list[dict], chunk_size: int = 500, overlap: int = 100) -> 
     for page in pages:
         text = page["text"]
         page_number = page["page_number"]
-        start = 0
 
-        while start < len(text):
-            end = start + chunk_size
+        # Step 1: Split text into sentences
+        sentences = _split_into_sentences(text)
 
-            # Try to break at a sentence boundary (period, newline)
-            if end < len(text):
-                # Look for the last sentence-ending punctuation within the chunk
-                last_period = text.rfind(". ", start, end)
-                last_newline = text.rfind("\n", start, end)
-                break_point = max(last_period, last_newline)
+        if not sentences:
+            continue
 
-                if break_point > start:
-                    end = break_point + 1  # include the period/newline
+        # Step 2: Group sentences into chunks of ~chunk_size characters
+        current_chunk = ""
+        sentence_buffer = []
 
-            chunk_content = text[start:end].strip()
-
-            if chunk_content:  # skip empty chunks
+        for sentence in sentences:
+            # If adding this sentence exceeds chunk_size, save current chunk
+            if current_chunk and len(current_chunk) + len(sentence) > chunk_size:
                 chunks.append({
-                    "content": chunk_content,
+                    "content": current_chunk.strip(),
                     "chunk_index": chunk_index,
                     "page_number": page_number,
                 })
                 chunk_index += 1
 
-            # Move forward by (chunk_size - overlap) to create overlap
-            start = start + chunk_size - overlap
+                # Build overlap from recent sentences
+                overlap_text = ""
+                for prev_sentence in reversed(sentence_buffer):
+                    if len(overlap_text) + len(prev_sentence) > overlap:
+                        break
+                    overlap_text = prev_sentence + " " + overlap_text
+
+                current_chunk = overlap_text.strip() + " " + sentence
+                sentence_buffer = [s for s in sentence_buffer if s in overlap_text] + [sentence]
+            else:
+                current_chunk = (current_chunk + " " + sentence).strip()
+                sentence_buffer.append(sentence)
+
+        # Don't forget the last chunk on the page
+        if current_chunk.strip():
+            chunks.append({
+                "content": current_chunk.strip(),
+                "chunk_index": chunk_index,
+                "page_number": page_number,
+            })
+            chunk_index += 1
 
     return chunks
+
+
+def _split_into_sentences(text: str) -> list[str]:
+    """Split text into sentences based on punctuation boundaries.
+
+    Handles periods, exclamation marks, question marks, and newlines
+    as sentence terminators.
+    """
+    sentences = []
+    current = ""
+
+    for char in text:
+        current += char
+        if char in ".!?\n" and len(current.strip()) > 1:
+            stripped = current.strip()
+            if stripped:
+                sentences.append(stripped)
+            current = ""
+
+    # Add any remaining text as the final sentence
+    if current.strip():
+        sentences.append(current.strip())
+
+    return sentences

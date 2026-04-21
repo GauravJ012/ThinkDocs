@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import connect_db, disconnect_db
 from app.repositories.document_repository import create_tables
-from app.routers import documents
+from app.routers import documents, chat
 
 
 @asynccontextmanager
@@ -29,6 +29,7 @@ app.add_middleware(
 )
 
 app.include_router(documents.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")

@@ -5,11 +5,12 @@ from app.services.pdf_service import (
     extract_text_from_pdf,
     chunk_text,
 )
+from app.services.embedding_service import generate_embeddings_for_document
 from app.repositories import document_repository, chunk_repository
 
 
 async def upload_document(file: UploadFile):
-    """Handle PDF upload: validate, save, extract text, chunk, and store."""
+    """Handle PDF upload: validate, save, extract text, chunk, embed, and store."""
 
     # Validate file type
     if not file.filename.lower().endswith(".pdf"):
@@ -52,10 +53,13 @@ async def upload_document(file: UploadFile):
     ]
     await chunk_repository.insert_chunks_batch(chunk_records)
 
-    # Update document with processing results
+    # Generate embeddings for all chunks (NEW)
+    await generate_embeddings_for_document(document["id"])
+
+    # Update document status to "processed" (CHANGED from "chunked")
     await document_repository.update_document_status(
         document["id"],
-        status="chunked",
+        status="processed",
         page_count=len(pages),
         chunk_count=len(chunks),
     )
