@@ -1,15 +1,20 @@
 from fastapi import APIRouter
-from app.models.chat_models import QuestionRequest
-from app.services.rag_service import retrieve_relevant_chunks
+from app.models.chat_models import QuestionRequest, AnswerResponse
+from app.services.rag_service import retrieve_relevant_chunks, ask_question
 
 router = APIRouter(prefix="/api/chat", tags=["Chat"])
 
 
+@router.post("/ask", response_model=AnswerResponse)
+async def ask(request: QuestionRequest):
+    """Ask a question and get an AI-generated answer based on uploaded documents."""
+    result = await ask_question(request.question)
+    return result
+
+
 @router.post("/retrieve")
 async def retrieve_chunks(request: QuestionRequest):
-    """Test endpoint: retrieve relevant chunks without LLM answer.
-    This will be replaced with the full Q&A endpoint in Step 7.
-    """
+    """Debug endpoint: retrieve relevant chunks without LLM answer."""
     chunks = await retrieve_relevant_chunks(request.question)
 
     return {
