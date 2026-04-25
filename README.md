@@ -23,8 +23,9 @@ ThinkDocs is a RAG (Retrieval-Augmented Generation) application that lets users 
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────────────────────────────┐     ┌──────────────────┐
-│             │     │           FastAPI Backend             │     │                  │
+![alt text](image.png)
+┌─────────────┐      ┌──────────────────────────────────────┐     ┌──────────────────┐
+│             │      │           FastAPI Backend             │     │                  │
 │   React     │────▶│                                      │────▶│   PostgreSQL     │
 │   Frontend  │     │  ┌──────────┐  ┌──────────────────┐  │     │   + pgvector     │
 │   (nginx)   │◀────│  │ PDF      │  │ RAG Pipeline     │  │     │                  │
@@ -114,8 +115,8 @@ thinkdocs/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/thinkdocs.git
-   cd thinkdocs
+   git clone https://github.com/GauravJ012/ThinkDocs.git
+   cd ThinkDocs
    ```
 
 2. **Create a `.env` file** in the project root:
