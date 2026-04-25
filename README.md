@@ -22,24 +22,8 @@ ThinkDocs is a RAG (Retrieval-Augmented Generation) application that lets users 
 
 ## Architecture
 
-```
 ![ThinkDocs Architecture](docs/screenshots/architecture.png)
-┌─────────────┐      ┌──────────────────────────────────────┐     ┌──────────────────┐
-│             │      │           FastAPI Backend             │     │                  │
-│   React     │────▶│                                      │────▶│   PostgreSQL     │
-│   Frontend  │     │  ┌──────────┐  ┌──────────────────┐  │     │   + pgvector     │
-│   (nginx)   │◀────│  │ PDF      │  │ RAG Pipeline     │  │     │                  │
-│             │     │  │ Upload & │  │                  │  │     │  ┌────────────┐  │
-│  • Upload   │     │  │ Chunking │  │ 1. Embed query   │  │     │  │ documents  │  │
-│  • Chat UI  │     │  │          │  │ 2. Vector search │  │     │  │ table      │  │
-│  • Sources  │     │  └──────────┘  │ 3. Build prompt  │  │     │  ├────────────┤  │
-│             │     │                │ 4. Call LLM      │  │     │  │ chunks     │  │
-│             │     │  ┌──────────┐  │ 5. Return answer │  │     │  │ table      │  │
-│             │     │  │ OpenAI   │  │    with sources  │  │     │  │ (vectors)  │  │
-│             │     │  │ API      │  └──────────────────┘  │     │  └────────────┘  │
-│             │     │  └──────────┘                        │     │                  │
-└─────────────┘     └──────────────────────────────────────┘     └──────────────────┘
-```
+
 
 ### RAG Pipeline Flow
 
