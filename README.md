@@ -4,8 +4,7 @@
 
 ThinkDocs is a RAG (Retrieval-Augmented Generation) application that lets users upload PDF documents and ask natural language questions about their content. The system retrieves the most relevant sections from the uploaded documents and generates accurate, cited answers using GPT-4o-mini.
 
-<!-- Add your screenshot here after taking it -->
-<!-- ![ThinkDocs Chat Interface](docs/screenshots/chat.png) -->
+![ThinkDocs Chat Interface](docs/screenshots/chat.png)
 
 ---
 
@@ -24,6 +23,7 @@ ThinkDocs is a RAG (Retrieval-Augmented Generation) application that lets users 
 
 ![ThinkDocs Architecture](docs/screenshots/architecture.png)
 
+---
 
 ### RAG Pipeline Flow
 
