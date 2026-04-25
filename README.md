@@ -23,7 +23,7 @@ ThinkDocs is a RAG (Retrieval-Augmented Generation) application that lets users 
 ## Architecture
 
 ```
-![alt text](image.png)
+![ThinkDocs Architecture](docs/screenshots/architecture.png)
 ┌─────────────┐      ┌──────────────────────────────────────┐     ┌──────────────────┐
 │             │      │           FastAPI Backend             │     │                  │
 │   React     │────▶│                                      │────▶│   PostgreSQL     │
